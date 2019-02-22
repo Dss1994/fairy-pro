@@ -42,6 +42,14 @@ public class UserController {
 		return ResponseDto.getSuccess();
 	}
 	
+	@RequestMapping("/delUser")
+	public  ResponseDto<String> delUser(@RequestBody RequestDto<JSONObject> request){
+		Long userId = request.getData().getLong("userId");
+		Integer currentType = session.getCurrentRole(request).get().getRoleType();
+		userModel.delUser(userId, currentType);
+		return ResponseDto.getSuccess();
+	}
+	
 	@RequestMapping("/addUser")
 	public ResponseDto<String> addUser(@RequestBody RequestDto<JSONObject> request) {
 		String loginName = request.getData().getString("loginName");
@@ -50,9 +58,8 @@ public class UserController {
 		String password = request.getData().getString("password");
 		String email = request.getData().getString("email");
 		Long roleId = request.getData().getLong("roleId");
-		Integer currentType = session.getCurrentRole(request).get().getRoleType();
 		Long currentUser = session.getCurrentUser(request).get().getId();
-		userModel.addUser(loginName, realName, identityCard, password, email, currentType, currentUser, roleId);
+		userModel.addUser(loginName, realName, identityCard, password, email, currentUser, roleId);
 		return ResponseDto.getSuccess();
 	}
 }

@@ -92,43 +92,32 @@ public class UserModel {
 				String identityCard,
 				String password,
 				String email,
-				Integer currentType,
 				Long  currentUser,
 				Long roleId
 			) {
 		
 		Optional<FairyBaseRole> roleInfo = roleModelJap.findById(roleId);
-		// 只有类型为1 或者类型为0 的才能进行创建人员,否则表示权限不足
-		if(1 != currentType && 0 != currentType) {
-			throw new RuntimeException("Permission Denied");
-		}
 		if(roleInfo.isPresent()) {
-			if(roleInfo.get().getRoleType() <= currentType) {
-				throw new RuntimeException(String.format("Insufficient permissions, current permissions [ %s ], target permissions [ %s ].", currentType,roleInfo));
-			}else {
-				
-				// 创建人员信息
-				FairyBaseUser fbu = new FairyBaseUser();
-				fbu.setCreateTime(new Date());
-				fbu.setEmail(email);
-				fbu.setId(snowflakeId.nextId());
-				fbu.setIdentityCard(identityCard);
-				fbu.setLoginName(loginName);
-				fbu.setPassword(Md5Variant.strongEncryption(password));
-				fbu.setRealName(realName);
-				userModelJpa.save(fbu);
-				
-				// 创建角色关联信息
-				FairyGrantRole fgr = new FairyGrantRole();
-				fgr.setId(snowflakeId.nextId());
-				fgr.setCreateTime(new Date());
-				fgr.setAuthorize(currentUser);
-				fgr.setRoleId(roleId);
-				fgr.setUserId(fbu.getId());
-				roleGroupModelJpa.save(fgr);
-				
-				return;
-			}
+			// 创建人员信息
+			FairyBaseUser fbu = new FairyBaseUser();
+			fbu.setCreateTime(new Date());
+			fbu.setEmail(email);
+			fbu.setId(snowflakeId.nextId());
+			fbu.setIdentityCard(identityCard);
+			fbu.setLoginName(loginName);
+			fbu.setPassword(Md5Variant.strongEncryption(password));
+			fbu.setRealName(realName);
+			userModelJpa.save(fbu);
+			
+			// 创建角色关联信息
+			FairyGrantRole fgr = new FairyGrantRole();
+			fgr.setId(snowflakeId.nextId());
+			fgr.setCreateTime(new Date());
+			fgr.setAuthorize(currentUser);
+			fgr.setRoleId(roleId);
+			fgr.setUserId(fbu.getId());
+			roleGroupModelJpa.save(fgr);
+			return;
 		}else {
 			throw new RuntimeException(String.format("Of course, the role does not exist. Please check it.[ %s ]", roleId));
 		}
@@ -143,6 +132,26 @@ public class UserModel {
 		}
 		
 	}
+	
+	public void delUser(Long userId,Integer currentRoleType) {
+		Optional<FairyBaseUser> user = userModelJpa.findById(userId);
+		if(user.isPresent()) {
+			Optional<FairyBaseSession> sess = sessionModelJpa.findByUserId(userId);
+			if(sess.isPresent()) {
+				throw new RuntimeException("The user is unable to delete the operation, please wait for the user to quit");
+			}else {
+				List<FairyGrantRole> roleGrant = roleGroupModelJpa.findByUserId(userId);
+				roleGrant.forEach((data)->{
+					roleGroupModelJpa.delete(data);
+				});
+				
+				userModelJpa.delete(user.get());
+			}
+		}else {
+			throw new RuntimeException(String.format("User id does not exist. [ %s ]", userId));
+		}
+	}
+	
 	/**
 	 *   用户登入
 	 * @param loginName 登入名称

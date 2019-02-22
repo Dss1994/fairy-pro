@@ -32,5 +32,6 @@ public @Data class FairyBaseUser implements Serializable{
 	@Temporal(TemporalType.TIMESTAMP) 
 	@Column(name = "create_time")
 	private Date createTime;
-	
+	@Column(name="online_time")
+	private Integer onlineTime = 30;
 }

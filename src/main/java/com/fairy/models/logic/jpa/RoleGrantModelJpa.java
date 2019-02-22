@@ -14,3 +14,4 @@ public interface RoleGrantModelJpa extends JpaRepository<FairyGrantRole,Long> ,C
    List<FairyGrantRole> findByUserId(@Param("userId") Long userId);
 
 }
+

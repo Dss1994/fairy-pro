@@ -34,7 +34,6 @@ public @Data class FairyBaseSession implements Serializable{
 	private String ipAddr;
 	@Column(name="equipment")
 	private Integer equipment;
-	
 	public FairyBaseSession(
 			Long id,
 			Long userId,

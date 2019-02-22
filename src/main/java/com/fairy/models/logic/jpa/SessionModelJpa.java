@@ -16,4 +16,6 @@ public interface SessionModelJpa extends JpaRepository<FairyBaseSession,Long> ,C
 	void deleteBySessionCode(@Param("sessionCode") String sessionCode);
 	@Query("from FairyBaseSession where sessionCode=:sessionCode")
 	Optional<FairyBaseSession> findBySessionCode(@Param("sessionCode") String sessionCode);
+	@Query("from FairyBaseSession where userId=:userId")
+	Optional<FairyBaseSession> findByUserId(@Param("userId") Long userId);
 }
