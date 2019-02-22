@@ -3,11 +3,14 @@ package com.fairy.models.logic;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.fairy.models.common.Md5Variant;
@@ -16,10 +19,10 @@ import com.fairy.models.dto.jpa.FairyBaseRole;
 import com.fairy.models.dto.jpa.FairyBaseSession;
 import com.fairy.models.dto.jpa.FairyBaseUser;
 import com.fairy.models.dto.jpa.FairyGrantRole;
-import com.fairy.models.logic.jpa.RoleGrantModelJpa;
-import com.fairy.models.logic.jpa.RoleModelJpa;
-import com.fairy.models.logic.jpa.SessionModelJpa;
-import com.fairy.models.logic.jpa.UserModelJpa;
+import com.fairy.models.logic.jpa.GrantRoleModelJpa;
+import com.fairy.models.logic.jpa.BaseRoleModelJpa;
+import com.fairy.models.logic.jpa.BaseSessionModelJpa;
+import com.fairy.models.logic.jpa.BaseUserModelJpa;
 
 import lombok.Data;
 
@@ -27,22 +30,22 @@ import lombok.Data;
 @Service
 public class UserModel {
 	public enum UserVerifyStatus{
-		SUCCESS,
-		WRONG_PASSWORD,
-		USER_DOES_NOT_EXIST,
-		SYSTEM_ERROR,
-		UNMAINTAINED_ROLES,
+		SUCCESS, // 成功
+		WRONG_PASSWORD, // 密码错误
+		USER_DOES_NOT_EXIST, // 用户不存在
+		SYSTEM_ERROR, // 系统错误
+		UNMAINTAINED_ROLES,// 人员未维护角色
 	}
 	@Autowired
-	private UserModelJpa userModelJpa;
+	private BaseUserModelJpa userModelJpa;
 	@Autowired
 	private SnowflakeIdGenerator snowflakeId;
 	@Autowired
-	private SessionModelJpa sessionModelJpa;
+	private BaseSessionModelJpa sessionModelJpa;
 	@Autowired
-	private RoleGrantModelJpa roleGroupModelJpa;
+	private GrantRoleModelJpa roleGroupModelJpa;
 	@Autowired
-	private RoleModelJpa roleModelJap;
+	private BaseRoleModelJpa roleModelJap;
 
 	/**
 	 * 验证当前用户的密码是否正确
@@ -64,7 +67,13 @@ public class UserModel {
 			}
 		}
 	}
+	public Map<String,Object> getCurrentUser(Long userId) {
+		return userModelJpa.findUserInfo(userId).get();
+	}
 	
+	public Page<Map<String, Object>> findUserInfoPage(String userId,Pageable pageable) {
+		return userModelJpa.findUserInfoPage(userId, pageable);
+	}
 	/**
 	 *   退出登入,删除对应的会话信息
 	 * @param sessionCode
@@ -92,43 +101,32 @@ public class UserModel {
 				String identityCard,
 				String password,
 				String email,
-				Integer currentType,
 				Long  currentUser,
 				Long roleId
 			) {
 		
 		Optional<FairyBaseRole> roleInfo = roleModelJap.findById(roleId);
-		// 只有类型为1 或者类型为0 的才能进行创建人员,否则表示权限不足
-		if(1 != currentType && 0 != currentType) {
-			throw new RuntimeException("Permission Denied");
-		}
 		if(roleInfo.isPresent()) {
-			if(roleInfo.get().getRoleType() <= currentType) {
-				throw new RuntimeException(String.format("Insufficient permissions, current permissions [ %s ], target permissions [ %s ].", currentType,roleInfo));
-			}else {
-				
-				// 创建人员信息
-				FairyBaseUser fbu = new FairyBaseUser();
-				fbu.setCreateTime(new Date());
-				fbu.setEmail(email);
-				fbu.setId(snowflakeId.nextId());
-				fbu.setIdentityCard(identityCard);
-				fbu.setLoginName(loginName);
-				fbu.setPassword(Md5Variant.strongEncryption(password));
-				fbu.setRealName(realName);
-				userModelJpa.save(fbu);
-				
-				// 创建角色关联信息
-				FairyGrantRole fgr = new FairyGrantRole();
-				fgr.setId(snowflakeId.nextId());
-				fgr.setCreateTime(new Date());
-				fgr.setAuthorize(currentUser);
-				fgr.setRoleId(roleId);
-				fgr.setUserId(fbu.getId());
-				roleGroupModelJpa.save(fgr);
-				
-				return;
-			}
+			// 创建人员信息
+			FairyBaseUser fbu = new FairyBaseUser();
+			fbu.setCreateTime(new Date());
+			fbu.setEmail(email);
+			fbu.setId(snowflakeId.nextId());
+			fbu.setIdentityCard(identityCard);
+			fbu.setLoginName(loginName);
+			fbu.setPassword(Md5Variant.strongEncryption(password));
+			fbu.setRealName(realName);
+			userModelJpa.save(fbu);
+			
+			// 创建角色关联信息
+			FairyGrantRole fgr = new FairyGrantRole();
+			fgr.setId(snowflakeId.nextId());
+			fgr.setCreateTime(new Date());
+			fgr.setAuthorize(currentUser);
+			fgr.setRoleId(roleId);
+			fgr.setUserId(fbu.getId());
+			roleGroupModelJpa.save(fgr);
+			return;
 		}else {
 			throw new RuntimeException(String.format("Of course, the role does not exist. Please check it.[ %s ]", roleId));
 		}
@@ -143,6 +141,26 @@ public class UserModel {
 		}
 		
 	}
+	
+	public void delUser(Long userId,Integer currentRoleType) {
+		Optional<FairyBaseUser> user = userModelJpa.findById(userId);
+		if(user.isPresent()) {
+			Optional<FairyBaseSession> sess = sessionModelJpa.findByUserId(userId);
+			if(sess.isPresent()) {
+				throw new RuntimeException("The user is unable to delete the operation, please wait for the user to quit");
+			}else {
+				List<FairyGrantRole> roleGrant = roleGroupModelJpa.findByUserId(userId);
+				roleGrant.forEach((data)->{
+					roleGroupModelJpa.delete(data);
+				});
+				
+				userModelJpa.delete(user.get());
+			}
+		}else {
+			throw new RuntimeException(String.format("User id does not exist. [ %s ]", userId));
+		}
+	}
+	
 	/**
 	 *   用户登入
 	 * @param loginName 登入名称

@@ -26,4 +26,6 @@ public @Data class FairyBaseRoute {
 	@Temporal(TemporalType.TIMESTAMP) 
 	@Column(name = "createTime")
 	private Date createTime;
+	@Column(name = "route_type")
+	private Integer routeType;
 }

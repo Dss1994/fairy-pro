@@ -10,6 +10,8 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Data;
 
 @Entity
@@ -25,6 +27,7 @@ public @Data class FairyBaseUser implements Serializable{
 	private String realName;
 	@Column(name = "identity_card")
 	private String identityCard;
+	@JsonIgnore
 	@Column(name = "password")
 	private String password;
 	@Column(name = "email")
@@ -32,5 +35,6 @@ public @Data class FairyBaseUser implements Serializable{
 	@Temporal(TemporalType.TIMESTAMP) 
 	@Column(name = "create_time")
 	private Date createTime;
-	
+	@Column(name="online_time")
+	private Integer onlineTime = 30;
 }

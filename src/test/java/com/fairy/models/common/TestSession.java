@@ -12,7 +12,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.fairy.models.dto.jpa.FairyBaseRole;
 import com.fairy.models.dto.jpa.FairyBaseUser;
-import com.fairy.models.logic.jpa.SessionModelJpa;
+import com.fairy.models.logic.jpa.BaseSessionModelJpa;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -21,7 +21,7 @@ public class TestSession {
 	private Session session ;
 	
 	@Autowired
-	private SessionModelJpa sessionModelJpa;
+	private BaseSessionModelJpa sessionModelJpa;
 	
 	@Test
 	public void testGetCurrentUser() {

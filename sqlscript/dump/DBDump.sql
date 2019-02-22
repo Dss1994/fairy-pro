@@ -54,6 +54,7 @@ CREATE TABLE `fairy_base_route` (
   `remarks` varchar(45) NOT NULL,
   `status` int(11) NOT NULL DEFAULT '0' COMMENT '状态 0 表示正常 1表示禁止',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建日期',
+  `route_type` int(11) NOT NULL DEFAULT '3' COMMENT '路由类型,默认为1  ,  4 表示未登入即可访问 ,1表示管理员权限,0表示超级管理员权限.3表示普通权限',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='基础的URL路由信息,用来做权限管理';
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -64,6 +65,7 @@ CREATE TABLE `fairy_base_route` (
 
 LOCK TABLES `fairy_base_route` WRITE;
 /*!40000 ALTER TABLE `fairy_base_route` DISABLE KEYS */;
+INSERT INTO `fairy_base_route` VALUES (0,'/api/user/login','用户登入接口',0,'2019-01-31 15:13:24',4),(1,'/api/user/logout','用户登出接口',0,'2019-01-31 15:13:24',4),(2,'/api/user/addUser','添加用户',0,'2019-01-31 15:13:24',1);
 /*!40000 ALTER TABLE `fairy_base_route` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -112,6 +114,7 @@ CREATE TABLE `fairy_base_user` (
   `password` varchar(32) NOT NULL COMMENT '32位的Hash的密码',
   `email` varchar(45) NOT NULL COMMENT '当前用户注册的邮箱地址',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `online_time` int(11) NOT NULL DEFAULT '30' COMMENT '在线时间,单位分钟,默认30分钟',
   PRIMARY KEY (`id`),
   UNIQUE KEY `login_name_UNIQUE` (`login_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='基础人员信息表';
@@ -123,7 +126,7 @@ CREATE TABLE `fairy_base_user` (
 
 LOCK TABLES `fairy_base_user` WRITE;
 /*!40000 ALTER TABLE `fairy_base_user` DISABLE KEYS */;
-INSERT INTO `fairy_base_user` VALUES (0,'admin','超级管理员','429005199609080071','+/?/^\'^||?,,/+!//_?/^+?~+~/,.-`=','zhangjin0908@hotmail.com','2019-01-29 13:55:20');
+INSERT INTO `fairy_base_user` VALUES (0,'admin','超级管理员','429005199609080071','+/?/^\'^||?,,/+!//_?/^+?~+~/,.-`=','zhangjin0908@hotmail.com','2019-01-29 13:55:20',30);
 /*!40000 ALTER TABLE `fairy_base_user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -159,6 +162,35 @@ LOCK TABLES `fairy_grant_role` WRITE;
 INSERT INTO `fairy_grant_role` VALUES (0,0,0,0,'2019-01-31 11:48:24');
 /*!40000 ALTER TABLE `fairy_grant_role` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `fairy_grant_route`
+--
+
+DROP TABLE IF EXISTS `fairy_grant_route`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+ SET character_set_client = utf8mb4 ;
+CREATE TABLE `fairy_grant_route` (
+  `id` bigint(20) NOT NULL,
+  `role_id` bigint(20) NOT NULL COMMENT '角色ID',
+  `route_id` bigint(20) NOT NULL COMMENT '路由ID',
+  `authorize` bigint(20) NOT NULL COMMENT '授权人',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `ROUTE_FK_idx` (`route_id`),
+  KEY `ROUTE_USER_FK_idx` (`authorize`),
+  KEY `ROLE_ROUTE_idx` (`role_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户授权路由';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `fairy_grant_route`
+--
+
+LOCK TABLES `fairy_grant_route` WRITE;
+/*!40000 ALTER TABLE `fairy_grant_route` DISABLE KEYS */;
+/*!40000 ALTER TABLE `fairy_grant_route` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -169,4 +201,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-01-31 13:11:59
+-- Dump completed on 2019-02-13 10:43:08

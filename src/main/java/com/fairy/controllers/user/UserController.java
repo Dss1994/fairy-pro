@@ -1,9 +1,13 @@
 package com.fairy.controllers.user;
 
 
+import java.util.List;
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.fastjson.JSONObject;
 import com.fairy.models.common.Session;
+import com.fairy.models.dto.Page;
 import com.fairy.models.dto.RequestDto;
 import com.fairy.models.dto.ResponseDto;
 import com.fairy.models.logic.UserModel;
@@ -41,7 +46,30 @@ public class UserController {
 		userModel.logout(token);
 		return ResponseDto.getSuccess();
 	}
+	@RequestMapping("/getCurrentUser")
+	public ResponseDto<Map<String,Object>> getCurrentUser(@RequestBody RequestDto<JSONObject> request) {
+		return ResponseDto.getSuccess(userModel.getCurrentUser(session.getCurrentUser(request).get().getId()));
+	}
+	@RequestMapping("/delUser")
+	public  ResponseDto<String> delUser(@RequestBody RequestDto<JSONObject> request){
+		Long userId = request.getData().getLong("userId");
+		Integer currentType = session.getCurrentRole(request).get().getRoleType();
+		userModel.delUser(userId, currentType);
+		return ResponseDto.getSuccess();
+	}
 	
+	@RequestMapping("/findUserAll")
+	public ResponseDto<Page<List<Map<String, Object>>>> findUserAll(@RequestBody RequestDto<Page<JSONObject>> request){
+		String userId = request.getData().getData().getString("userId");
+		return Page.toReturnPage(
+				userModel.findUserInfoPage(userId, 
+						PageRequest.of(
+							request.getData().getPageNo(), 
+							request.getData().getPageSize()
+					    )
+				     )
+				);
+	}
 	@RequestMapping("/addUser")
 	public ResponseDto<String> addUser(@RequestBody RequestDto<JSONObject> request) {
 		String loginName = request.getData().getString("loginName");
@@ -50,9 +78,8 @@ public class UserController {
 		String password = request.getData().getString("password");
 		String email = request.getData().getString("email");
 		Long roleId = request.getData().getLong("roleId");
-		Integer currentType = session.getCurrentRole(request).get().getRoleType();
 		Long currentUser = session.getCurrentUser(request).get().getId();
-		userModel.addUser(loginName, realName, identityCard, password, email, currentType, currentUser, roleId);
+		userModel.addUser(loginName, realName, identityCard, password, email, currentUser, roleId);
 		return ResponseDto.getSuccess();
 	}
 }

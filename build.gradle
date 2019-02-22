@@ -42,12 +42,15 @@ jacocoTestCoverageVerification {
 
 
 
+
+
 dependencies {
 	implementation('com.alibaba:fastjson:1.2.51')
 	implementation('com.google.guava:guava:27.0.1-jre')
 	implementation('mysql:mysql-connector-java:8.0.14')
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.eclipse.jgit:org.eclipse.jgit:2.2.0.201212191850-r'	
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	
 }

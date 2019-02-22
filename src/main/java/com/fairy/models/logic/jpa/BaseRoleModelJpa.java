@@ -5,5 +5,5 @@ import org.springframework.data.repository.CrudRepository;
 
 import com.fairy.models.dto.jpa.FairyBaseRole;
 
-public interface RoleModelJpa extends JpaRepository<FairyBaseRole,Long> ,CrudRepository<FairyBaseRole,Long>  {
+public interface BaseRoleModelJpa extends JpaRepository<FairyBaseRole,Long> ,CrudRepository<FairyBaseRole,Long>  {
 }
